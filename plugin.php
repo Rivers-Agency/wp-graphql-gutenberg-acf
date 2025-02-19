@@ -79,19 +79,29 @@ if ( ! class_exists( 'WPGraphQLGutenbergACF' ) && class_exists( 'WPGraphQL\ACF\C
 			}
 		}
 
-		public function get_root_id( $id, $root ) {
-			if ( $root instanceof Block ) {
-				acf_setup_meta(
-						$root['attributes']['data'],
-						$root['attributes']['id'],
-						false
-				);
+        public function get_root_id( $id, $root ) {
+            if ( $root instanceof Block ) {
+                // Ensure $id is always unique to prevent duplicate blocks.
+                $unique_id = uniqid();
 
-				return $root['attributes']['id'];
-			} // end if
+                if ( isset( $root['dynamicContent'] ) && !empty( $root['dynamicContent'] ) ) {
+                    // Hash the content of the block for unique ID.
+                    $unique_id = hash( 'crc32c', $root['dynamicContent'] );
+                }
 
-			return $id;
-		}
+                $id = $root['postId'] . '_' . $unique_id;
+                if (array_key_exists('id', $root['attributes'])) {
+                    $id = $root['attributes']['id'];
+                }
+                acf_setup_meta(
+                        $root['attributes']['data'],
+                        $id,
+                        false
+                );
+            } // end if
+
+            return $id;
+        }
 
 		public function block_type_fields( $fields, $block_type, $type_registry ) {
 			$this->type_registry = $type_registry;
